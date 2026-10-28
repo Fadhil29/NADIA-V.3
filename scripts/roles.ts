@@ -10,7 +10,7 @@ export const ROLES = [
 ] as const;
 
 // penerima surat, tidak login
-export const PEJABAT_TUJUAN = 'wahyu.c'; // TODO: teks yang dipilih di field To
+export const PEJABAT_TUJUAN = process.env.NADIA_PEJABAT_TUJUAN ?? ''; // TODO: teks yang dipilih di field To
 
 export type RoleSlug = (typeof ROLES)[number]['slug'];
 
