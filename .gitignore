@@ -1,0 +1,8 @@
+node_modules/
+test-results/
+playwright-report/
+playwright/.auth/*
+!playwright/.auth/.gitkeep
+excel-report/
+.env
+auth*.json
