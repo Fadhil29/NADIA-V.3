@@ -1,6 +1,6 @@
-import { NADIA_HOME } from '../../scripts/roles';
-import { test } from '../fixtures';
-import { uniqueTag } from '../helpers/data';
+import { NADIA_HOME } from '../../../scripts/roles';
+import { test } from '../../fixtures';
+import { uniqueTag } from '../../helpers/data';
 
 // aktor (asumsi, konfirmasi ke PM): staff -> pejabat -> pgs -> pgs
 // hapus .fixme setelah langkah TODO terisi

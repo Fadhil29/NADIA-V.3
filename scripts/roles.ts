@@ -14,6 +14,32 @@ export const PEJABAT_TUJUAN = process.env.NADIA_PEJABAT_TUJUAN ?? ''; // TODO: t
 
 export type RoleSlug = (typeof ROLES)[number]['slug'];
 
+// Nama aktor di skenario (bahasa bisnis) -> akun yang dipakai. Ubah di SINI kalau pemetaannya berubah.
+// TODO: konfirmasi pemetaan ini, ini asumsi sementara
+export const ACTOR_ALIASES = {
+  atasan: 'divhead',
+  atasan2: 'grouphead',
+} as const satisfies Record<string, RoleSlug>;
+
+// aktor yang dipakai spec tapi belum punya akun; spec-nya tetap test.fixme sampai akun ada
+export const ACTORS_WITHOUT_ACCOUNT = [
+  'sekretaris',
+  'admin-regional',
+  'admin-cabang',
+  'staff-dispo',
+  'pejabat',
+  'pgs',
+] as const;
+
+export type ActorName = RoleSlug | keyof typeof ACTOR_ALIASES | (typeof ACTORS_WITHOUT_ACCOUNT)[number];
+
+export function resolveRole(actor: ActorName): RoleSlug {
+  if ((ACTORS_WITHOUT_ACCOUNT as readonly string[]).includes(actor)) {
+    throw new Error(`aktor "${actor}" belum punya akun di ROLES/.env, tambahkan dulu sebelum menghapus test.fixme`);
+  }
+  return (ACTOR_ALIASES as Record<string, RoleSlug>)[actor] ?? (actor as RoleSlug);
+}
+
 export const authFile = (slug: string) => `playwright/.auth/${slug}.json`;
 
 export const SSO_LOGIN_URL = 'https://familia-sim.injourneyairports.id/'; // TODO: halaman login dari rekaman
