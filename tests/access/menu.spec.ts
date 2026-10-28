@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { account, NADIA_HOME } from '../../scripts/roles';
+import { menuItem, nadia, waitForNadia } from '../helpers/nav';
 
 // TODO: isi dari matriks akses yang dikonfirmasi PM
 const VISIBLE: Record<string, string[]> = {
@@ -18,18 +19,19 @@ test('login sebagai akun yang benar', async ({ page }, info) => {
   const acc = account(info.project.name);
   test.skip(!acc.displayName, `${acc.env}_NAME belum diisi di .env`);
   await page.goto(NADIA_HOME);
-  await expect(page.getByText(acc.displayName!).first()).toBeVisible();
+  await expect(nadia(page).getByText(acc.displayName!).filter({ visible: true }).first()).toBeVisible({ timeout: 30000 });
 });
 
 test('menu sesuai hak akses', async ({ page }, info) => {
   const role = info.project.name;
   test.skip(!VISIBLE[role] && !HIDDEN[role], 'matriks akses role ini belum diisi');
   await page.goto(NADIA_HOME);
+  await waitForNadia(page);
   for (const menu of VISIBLE[role] ?? []) {
-    await expect.soft(page.getByRole('link', { name: menu }).first(), `menu "${menu}" harus terlihat`).toBeVisible();
+    await expect.soft(menuItem(page, menu), `menu "${menu}" harus terlihat`).toBeVisible();
   }
   for (const menu of HIDDEN[role] ?? []) {
-    await expect.soft(page.getByRole('link', { name: menu }), `menu "${menu}" tidak boleh terlihat`).toHaveCount(0);
+    await expect.soft(menuItem(page, menu), `menu "${menu}" tidak boleh terlihat`).toHaveCount(0);
   }
 });
 

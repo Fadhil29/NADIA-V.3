@@ -6,6 +6,8 @@ export const ROLES = [
   { slug: 'divhead', name: 'Div Head', env: 'NADIA_DIVHEAD' },
   { slug: 'grouphead', name: 'Group Head', env: 'NADIA_GROUPHEAD' },
   { slug: 'admin', name: 'Admin', env: 'NADIA_ADMIN' },
+  { slug: 'pgs', name: 'PGS', env: 'NADIA_PGS' },
+  { slug: 'staff-dispo', name: 'Staff Dispo', env: 'NADIA_STAFFDISPO' },
   // tambah pejabat & pgs kalau Mirroring masuk scope
 ] as const;
 
@@ -42,8 +44,9 @@ export function resolveRole(actor: ActorName): RoleSlug {
 
 export const authFile = (slug: string) => `playwright/.auth/${slug}.json`;
 
-export const SSO_LOGIN_URL = 'https://familia-sim.injourneyairports.id/'; // TODO: halaman login dari rekaman
-export const NADIA_HOME = 'https://familia-sim.injourneyairports.id/'; // TODO: halaman utama NADIA setelah login
+export const SSO_LOGIN_URL = 'https://familia-sim.injourneyairports.id/login';
+export const FAMILIA_HOME = 'https://familia-sim.injourneyairports.id/u/home';
+export const NADIA_HOME = 'https://familia-sim.injourneyairports.id/u/f/nadia/dashboard';
 
 export const account = (slug: string) => {
   const role = ROLES.find((r) => r.slug === slug);

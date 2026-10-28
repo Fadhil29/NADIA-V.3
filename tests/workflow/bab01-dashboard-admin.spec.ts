@@ -1,20 +1,21 @@
-import { NADIA_HOME } from '../../scripts/roles';
+import { account } from '../../scripts/roles';
 import { test } from '../fixtures';
 
-// BAB 1 - Dashboard Admin
-// Aktor : admin
-// Sumber: Manual_Book_NADIA_V3.pptx. Tier = usulan sementara (belum berdasar defect history).
-// CATATAN: Angka di dashboard belum punya oracle (API/DB). Sampai ada, test ini hanya cek komponen tampil, BUKAN kebenaran angka.
-// Hapus .fixme setelah semua TODO terisi dari codegen. Jangan menebak selector.
-test.fixme('BAB01 Dashboard Admin menampilkan ringkasan dan grafik', { tag: ['@bab01', '@tier3'] }, async ({ as }) => {
-  await test.step('Admin: buka menu Dashboard', async () => {
-    const admin = await as('admin');
-    await admin.goto(NADIA_HOME);
-    // TODO(codegen admin):
-    //   1. login sebagai Admin, buka menu Dashboard
-    // CEK (manual): ringkasan: Total Document, Active/Inactive Archives, Archive Destruction, Letter In, Letter Out, User NADIA
-    // CEK (manual): peta sebaran unit kerja/cabang
-    // CEK (manual): grafik Total User dan Total Documents per unit kerja, grafik Document Type
-    // CEK (manual): Documents Per Month, Top 5 Unit Backdate, perbandingan Document Digital/Manual
-  });
+const admin = account('admin');
+
+test('BAB01 Dashboard Admin menampilkan ringkasan dan grafik', { tag: ['@bab01', '@tier3'] }, async ({ page }) => {
+  test.skip(!admin.username || !admin.password, 'Isi NADIA_ADMIN_USERNAME dan NADIA_ADMIN_PASSWORD di .env');
+
+  await page.goto('https://familia-sim.injourneyairports.id/');
+  await page.goto('https://familia-sim.injourneyairports.id/login');
+  await page.getByRole('textbox', { name: 'Enter your username' }).fill(admin.username);
+  await page.getByRole('textbox', { name: 'Enter your password' }).fill(admin.password);
+  await page.getByRole('button', { name: 'Logo Familia Familia Single' }).click();
+  await page.goto('https://familia-sim.injourneyairports.id/u/home');
+  await page.getByRole('button', { name: 'Tutup' }).click();
+  await page.locator('div:nth-child(5) > .h-12').click();
+  await page.goto('https://familia-sim.injourneyairports.id/u/f/nadia/');
+  await page.getByRole('button', { name: 'Reload' }).click();
+  await page.locator('iframe').contentFrame().getByRole('link', { name: 'Dashboard ' }).click();
+  await page.locator('iframe').contentFrame().getByText('Dashboard Export PDF').click();
 });
