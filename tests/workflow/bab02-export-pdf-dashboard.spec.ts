@@ -1,25 +1,37 @@
-import { account } from '../../scripts/roles';
-import { test } from '../fixtures';
+import { NADIA_HOME } from '../../scripts/roles';
+import { expect, test } from '../fixtures';
+import { nadia, waitForNadia } from '../helpers/nav';
 
-const admin = account('admin');
+// BAB 2 - Export PDF Dashboard | aktor: admin
+// Dari dump-page.ts (29/10/2026): "Export PDF" membuka POPUP dengan URL blob: yang dirender viewer PDF bawaan Chrome.
+// Viewer itu bukan bagian NADIA (nama iframe-nya hash dinamis dan tombol download ada di toolbar Chrome),
+// jadi yang dites adalah ISI blob-nya: harus PDF yang valid dan tidak kosong, bukan DOM viewer.
+// BELUM DIUJI di staging. Catatan: viewer PDF hanya ada di Chrome headed; di headless navigasi PDF bisa jadi download.
+test('BAB02 Export PDF Dashboard: popup membuka PDF yang valid', { tag: ['@bab02', '@tier3'] }, async ({ as }) => {
+  const admin = await as('admin');
+  await admin.goto(NADIA_HOME);
+  await waitForNadia(admin);
+  const app = nadia(admin);
+  await expect(app.getByRole('heading', { name: 'Total Document', exact: true })).toBeVisible({ timeout: 20000 });
 
-test('BAB02 Export PDF Dashboard mengunduh laporan', { tag: ['@bab02', '@tier3'] }, async ({ page }) => {
-  test.skip(!admin.username || !admin.password, 'Isi NADIA_ADMIN_USERNAME dan NADIA_ADMIN_PASSWORD di .env');
+  // TODO(manual langkah 2-5): pilih Location dan Periode, klik "Filter" sebelum export. Rekam kondisinya dengan dump-page.ts.
 
-  await page.goto('https://familia-sim.injourneyairports.id/');
-  await page.goto('https://familia-sim.injourneyairports.id/login');
-  await page.getByRole('textbox', { name: 'Enter your username' }).fill(admin.username);
-  await page.getByRole('textbox', { name: 'Enter your password' }).fill(admin.password);
-  await page.getByRole('button', { name: 'Logo Familia Familia Single' }).click();
-  await page.goto('https://familia-sim.injourneyairports.id/u/home');
-  await page.getByRole('button', { name: 'Tutup' }).click();
-  await page.locator('div:nth-child(5) > .h-12').click();
-  await page.goto('https://familia-sim.injourneyairports.id/u/f/nadia/');
-  await page.getByRole('button', { name: 'Reload' }).click();
-  await page.locator('iframe').contentFrame().getByRole('link', { name: 'Dashboard ' }).click();
-  await page.locator('iframe').contentFrame().getByText('Dashboard Export PDF').click();
-  const page1Promise = page.waitForEvent('popup');
-  await page.locator('iframe').contentFrame().getByRole('link', { name: 'ï‡ Export PDF' }).click();
-  const page1 = await page1Promise;
-  await page1.locator('iframe[name="2D11996799EF713B8426CCF344FA6B22"]').contentFrame().getByText('Dashboard Report Period 01 January - 31 December 2026 / 6 With your changes').click();
+  const popupPromise = admin.waitForEvent('popup', { timeout: 30000 });
+  await app.getByRole('link', { name: /Export PDF/ }).click();
+  const popup = await popupPromise;
+
+  await expect
+    .poll(() => popup.url(), { message: 'popup harus berisi blob: hasil export', timeout: 30000 })
+    .toMatch(/^blob:https?:\/\//);
+
+  const pdf = await popup.evaluate(async (url) => {
+    const res = await fetch(url);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    return { size: bytes.length, magic: String.fromCharCode(...Array.from(bytes.slice(0, 5))) };
+  }, popup.url());
+
+  expect(pdf.magic, 'isi popup bukan PDF').toBe('%PDF-');
+  expect(pdf.size, 'PDF kosong').toBeGreaterThan(1024);
+  // TODO: isi PDF ("Dashboard Report", periode sesuai filter) butuh parser PDF (mis. pdf-parse). Belum ditambah, perlu persetujuan nambah dependency.
+  await popup.close();
 });

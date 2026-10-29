@@ -1,87 +1,58 @@
+import { FrameLocator } from '@playwright/test';
 import { NADIA_HOME } from '../../scripts/roles';
 import { expect, test } from '../fixtures';
+import { nadia, waitForNadia } from '../helpers/nav';
 
-// Isi dengan teks widget/judul yang WAJIB ada di dashboard admin.
-// Contoh: ['Total Surat Masuk', 'Surat Belum Dibaca']. Kosong = hanya cek generik.
-const WIDGET_KRITIS: string[] = [];
+// BAB 1 - Dashboard Admin | aktor: admin
+// Selector dari scripts/dump-page.ts (29/10/2026). Angka TIDAK di-hardcode karena data dev berubah-ubah:
+// yang dicek adalah komponen tampil dan angka konsisten antar widget. Isi chart/peta belum punya oracle.
+const T = { timeout: 20000 };
 
-const NADIA_URL = new URL('/u/f/nadia/', NADIA_HOME).toString();
+// angka berformat "29.891" (id) atau "2,322" (en): ambil digitnya saja
+const digits = (s: string | null | undefined) => Number((s ?? '').replace(/[^\d]/g, ''));
 
-test(
-  'BAB01 Dashboard Admin menampilkan ringkasan dan grafik',
-  { tag: ['@bab01', '@tier3', '@smoke'] },
-  async ({ as }) => {
-    const admin = await as('admin');
+const heading = (app: FrameLocator, name: string) => app.getByRole('heading', { name, exact: true }); // exact: "Total Document" != "Total Documents"
+// nilai kartu = <h1> berikutnya setelah judul kartu (urutan DOM = urutan pohon aksesibilitas)
+const valueAfter = (app: FrameLocator, name: string) => heading(app, name).locator('xpath=following::h1[1]');
+// nilai per bulan = <h2> terdekat sebelum nama bulan
+const monthValue = (app: FrameLocator, month: string) => heading(app, month).locator('xpath=preceding::h2[1]');
 
-    // catat request data yang gagal selama test (termasuk dari dalam iframe)
-    const failed: string[] = [];
-    admin.on('response', (r) => {
-      const type = r.request().resourceType();
-      if (['xhr', 'fetch', 'document'].includes(type) && r.status() >= 400) {
-        failed.push(`${r.status()} ${r.url()}`);
-      }
-    });
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-    await test.step('Admin: buka NADIA', async () => {
-      await admin.goto(NADIA_URL);
-      await admin.waitForLoadState('networkidle');
+test('BAB01 Dashboard Admin menampilkan ringkasan dan grafik', { tag: ['@bab01', '@tier3'] }, async ({ as }) => {
+  const admin = await as('admin');
+  await admin.goto(NADIA_HOME);
+  await waitForNadia(admin);
+  const app = nadia(admin);
 
-      // popup "Tutup" hanya diklik kalau muncul
-      const tutup = admin.getByRole('button', { name: 'Tutup' });
-      if (await tutup.isVisible({ timeout: 3000 }).catch(() => false)) await tutup.click();
+  // komponen yang disebut manual BAB 1
+  const headings = [
+    'Total Document', 'Archive Destruction', 'Letter In', 'Letter Out', 'User NADIA',
+    'Total User', 'Total Documents', 'Document Type', 'Documents Per Month', 'Top 5 Unit Backdate', 'Document Digital/Manual',
+  ];
+  for (const name of headings) await expect.soft(heading(app, name), `heading "${name}"`).toBeVisible(T);
+  await expect.soft(app.getByText('Active and Inactive Archives'), 'ringkasan Active/Inactive Archives').toBeVisible(T);
+  await expect.soft(app.getByRole('img', { name: 'Indonesia Map' }), 'peta sebaran').toBeVisible(T);
+});
 
-      // tombol "Reload" dari rekaman: diklik hanya kalau ada
-      const reload = admin.getByRole('button', { name: 'Reload' });
-      if (await reload.isVisible({ timeout: 3000 }).catch(() => false)) await reload.click();
-    });
+test('BAB01 angka antar widget konsisten', { tag: ['@bab01', '@tier3'] }, async ({ as }) => {
+  const admin = await as('admin');
+  await admin.goto(NADIA_HOME);
+  await waitForNadia(admin);
+  const app = nadia(admin);
+  await expect(heading(app, 'Total Document')).toBeVisible(T);
 
-    const nadia = admin.frameLocator('iframe');
+  const total = digits(await valueAfter(app, 'Total Document').textContent(T));
+  const active = digits(await valueAfter(app, 'Active Archives').textContent(T));
+  const inactive = digits(await valueAfter(app, 'Inactive Archives').textContent(T));
+  expect(total, 'Total Document 0: data dashboard kosong, test ini tidak bermakna').toBeGreaterThan(0);
 
-    await test.step('Admin: masuk ke menu Dashboard', async () => {
-      // ikon bisa ada di depan atau di belakang teks, jadi \W* di kedua sisi
-      const dashboardLink = nadia.getByRole('link', { name: /^\W*Dashboard\W*$/ }).filter({ visible: true }).first();
+  // CATATAN: invarian ini terbukti benar di snapshot 29/10 pada filter default (HO, periode tahun berjalan).
+  // Kalau gagal, cek dulu apakah aturannya memang begitu sebelum menganggap bug.
+  expect(active + inactive, 'Active + Inactive Archives harus = Total Document').toBe(total);
 
-      try {
-        await dashboardLink.waitFor({ state: 'visible', timeout: 30000 });
-      } catch {
-        const ada = await nadia.getByRole('link').allInnerTexts().catch(() => [] as string[]);
-        throw new Error(
-          `Link "Dashboard" tidak ketemu di iframe. Link yang terbaca: ${JSON.stringify(ada.map((t) => t.trim()))}`,
-        );
-      }
-      await dashboardLink.click();
-
-      await expect(nadia.getByText('Dashboard Export PDF').first(), 'menu/halaman Dashboard tidak terbuka').toBeVisible({
-        timeout: 30000,
-      });
-    });
-
-    await test.step('Ringkasan tampil dan berisi angka', async () => {
-      for (const teks of WIDGET_KRITIS) {
-        await expect(nadia.getByText(teks).first(), `widget "${teks}" tidak tampil`).toBeVisible();
-      }
-      await expect(nadia.locator('body'), 'dashboard tidak berisi angka sama sekali').toContainText(/\d/);
-    });
-
-    await test.step('Grafik ter-render', async () => {
-      await expect
-        .poll(
-          async () =>
-            (
-              await nadia.locator('canvas, svg').evaluateAll((els) =>
-                els.map((e) => {
-                  const r = e.getBoundingClientRect();
-                  return r.width >= 150 && r.height >= 100; // abaikan ikon kecil
-                }),
-              )
-            ).some(Boolean),
-          { message: 'tidak ada grafik berukuran wajar yang ter-render', timeout: 20000 },
-        )
-        .toBe(true);
-    });
-
-    await test.step('Tidak ada request data yang gagal', async () => {
-      expect(failed, `request gagal:\n${failed.join('\n')}`).toEqual([]);
-    });
-  },
-);
+  let perBulan = 0;
+  for (const m of MONTHS) perBulan += digits(await monthValue(app, m).textContent(T));
+  expect(perBulan, 'jumlah 12 bulan pada Documents Per Month harus = Total Document').toBe(total);
+  // TODO: Document Digital/Manual (digital + manual = total) setelah selector kontainernya dari dump --html
+});
