@@ -3,6 +3,7 @@ import fs from 'fs';
 import { authFile, NADIA_HOME, RoleSlug } from '../../scripts/roles';
 import { expect, test } from '../fixtures';
 import { nadia, openMenu, openSubMenu, waitForNadia } from '../helpers/nav';
+import { uat } from '../helpers/uat';
 
 // BAB 4 - Copy Source | aktor: satu user (fitur tidak melibatkan role lain)
 // Aturan (konfirmasi 30/10): docno hanya boleh dari Sent Item milik user sendiri; docno dari Inbox ditolak (server: HTTP 403).
@@ -140,7 +141,7 @@ for (const aktor of AKTOR) {
       test.skip(!fs.existsSync(authFile(aktor)), `akun ${aktor} belum punya session (npm run auth -- ${aktor})`);
     });
 
-    test('BAB04 Copy Source: docno dari Sent Item sendiri mengisi form Official Memo', { tag: ['@bab04', '@tier2'] }, async ({ as }) => {
+    test('BAB04 Copy Source: docno dari Sent Item sendiri mengisi form Official Memo', { tag: ['@bab04', '@tier2'], annotation: uat('Copy Source', 'CS-01', 'CS-02') }, async ({ as }) => {
       const user = await as(aktor);
       const app = nadia(user);
       await user.goto(NADIA_HOME);
@@ -189,6 +190,7 @@ for (const aktor of AKTOR) {
       });
     });
 
+    // TODO(uat): belum ada case UAT untuk docno dari Inbox; tambahkan di sheet Copy Source lalu pasang uat(...)
     test('BAB04 Copy Source: docno dari Inbox ditolak dan form tetap kosong', { tag: ['@bab04', '@tier2'] }, async ({ as }) => {
       const user = await as(aktor);
       const app = nadia(user);

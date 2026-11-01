@@ -3,6 +3,7 @@ import fs from 'fs';
 import { ACTORS_WITHOUT_ACCOUNT, authFile, NADIA_HOME, ROLES } from '../../scripts/roles';
 import { expect, test } from '../fixtures';
 import { nadia, reloadNadia, waitForNadia } from '../helpers/nav';
+import { uat } from '../helpers/uat';
 
 // BAB 3 - Active/Inactive Role | aktor: semua role user
 // Alur (rekaman user): buka dropdown role -> pilih role satu di bawah role aktif -> toggle ON/OFF muncul.
@@ -121,7 +122,8 @@ const siap = (slug: string) =>
   fs.existsSync(authFile(slug)) && !(ACTORS_WITHOUT_ACCOUNT as readonly string[]).includes(slug);
 
 for (const { slug } of ROLES) {
-  test(`BAB03 [${slug}] switch role, toggle status berubah dan bertahan setelah reload`, { tag: ['@bab03', '@tier1'] }, async ({ as }) => {
+  // toggle diuji dua arah (ON dan OFF) dalam satu test
+  test(`BAB03 [${slug}] switch role, toggle status berubah dan bertahan setelah reload`, { tag: ['@bab03', '@tier1'], annotation: uat('ActiveInactive Role', 'ROLE-01', 'ROLE-02') }, async ({ as }) => {
     test.skip(TANPA_ROLE.includes(slug), `akun ${slug} tidak punya role`);
     test.skip(!siap(slug), `akun ${slug} belum punya session atau belum terdaftar`);
     const user = await as(slug);
