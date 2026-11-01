@@ -6,10 +6,11 @@ export default defineConfig({
   testDir: './tests',
   timeout: 180000,
   retries: 0,
-  reporter: [['list'], ['html', { open: 'never' }], ['./reporters/excel-reporter.ts']],
+  reporter: [['list'], ['html', { open: 'never' }], ['./reporters/excel-reporter.ts'], ['./reporters/evidence-reporter.ts']],
   use: {
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: process.env.EVIDENCE ? 'on' : 'off', // untuk test yang memakai fixture page bawaan
     actionTimeout: 15000,
   },
   projects: [

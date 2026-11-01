@@ -7,7 +7,11 @@
     "test": "playwright test",
     "test:access": "playwright test access",
     "test:workflow": "playwright test --project=workflow",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "test:evidence": "tsx scripts/run-evidence.ts",
+    "evidence": "tsx scripts/record-evidence.ts",
+    "uat:prepare": "tsx scripts/uat-prepare.ts",
+    "uat:fill": "tsx scripts/uat-fill.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

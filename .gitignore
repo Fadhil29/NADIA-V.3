@@ -6,3 +6,5 @@ playwright/.auth/*
 excel-report/
 .env
 auth*.json
+evidence/
+uat/
