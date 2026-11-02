@@ -30,7 +30,7 @@ export default class EvidenceReporter implements Reporter {
         for (const v of videos) {
           const role = v.name === 'video' ? project : v.name.replace(/^video-/, '');
           if (!e.roles.includes(role)) e.roles.push(role);
-          e.files.push(simpanVideo(v.path!, sheet, id, role, status));
+          e.files.push(simpanVideo(v.path!, sheet, id, role, status, ids.length === 1 ? test.title : ''));
         }
       }
     }

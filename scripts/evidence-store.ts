@@ -34,11 +34,22 @@ export function simpanManifest(data: Record<string, Entry>) {
 
 const aman = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '-').trim();
 
-// salin video ke evidence/<sheet>/<ID>_<role>_<STATUS>[_n].webm, kembalikan path relatif
-export function simpanVideo(src: string, sheet: string, id: string, role: string, status: Status) {
+// judul skenario untuk nama file: buang CASE ID di depan, karakter non huruf/angka jadi "-", maks 60 karakter
+export const slugSkenario = (judul = '', id = '') =>
+  judul
+    .replace(new RegExp(`^\\s*${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`), '')
+    .normalize('NFKD')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/^(.{0,60})(-.*)?$/, '$1') // potong di batas kata terakhir sebelum 60 karakter
+    .slice(0, 60);
+
+// salin video ke evidence/<sheet>/<ID>_<skenario>_<role>_<STATUS>[_n].webm, kembalikan path relatif
+export function simpanVideo(src: string, sheet: string, id: string, role: string, status: Status, judul = '') {
   const dir = path.join(EVIDENCE_DIR, aman(sheet));
   fs.mkdirSync(dir, { recursive: true });
-  const dasar = `${aman(id)}_${aman(role)}_${status}`;
+  const skenario = slugSkenario(judul, id);
+  const dasar = [aman(id), skenario, aman(role), status].filter(Boolean).join('_');
   let nama = `${dasar}.webm`;
   for (let i = 2; fs.existsSync(path.join(dir, nama)); i++) nama = `${dasar}_${i}.webm`;
   fs.copyFileSync(src, path.join(dir, nama));

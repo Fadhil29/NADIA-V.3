@@ -2,12 +2,13 @@ import { Page } from '@playwright/test';
 import { NADIA_HOME, RoleSlug } from '../../scripts/roles';
 import {
   bukaForm,
-  bukaSentItem,
+  cariDiSentItem,
   cariDocno,
   daftarSentItem,
+  isianBaru,
   isianForm,
+  isianStabil,
   ItemSent,
-  lewatiTour,
   T,
   tombolCopySource,
   tolakAkses,
@@ -78,13 +79,7 @@ async function ambilDocno(user: Page, pola: RegExp, label: string): Promise<Item
   const dariEnv = docnoEnv(label);
   if (dariEnv.length) {
     // tetap tampilkan dokumennya di Sent Item supaya video evidence menunjukkan sumber docno
-    await langkah(user, `Cari ${dariEnv[0]} (${label}) di Sent Item`, async () => {
-      const app = nadia(user);
-      await bukaSentItem(user);
-      await lewatiTour(app);
-      await app.locator('.dataTables_filter input, .dt-search input').first().fill(dariEnv[0]).catch(() => {});
-      await expect.soft(app.locator('table tbody tr').first(), `${dariEnv[0]} tidak ditemukan di Sent Item ${AKTOR}`).toContainText(dariEnv[0], T);
-    });
+    await langkah(user, `Cari ${dariEnv[0]} (${label}) di Sent Item`, () => cariDiSentItem(user, dariEnv[0]));
     return dariEnv.map((docno) => ({ docno, jenis: label }));
   }
   return langkah(user, `Ambil No. Document ${label} dari Sent Item`, async () => {
@@ -139,7 +134,7 @@ for (const j of JENIS) {
         const app = nadia(user);
         const [k] = await ambilDocno(user, j.beda, j.bedaNama);
         await langkah(user, `Compose → ${j.submenu}`, () => bukaForm(user, j.submenu));
-        const sebelum = await isianForm(app);
+        const sebelum = await isianStabil(app);
 
         await langkah(user, `Copy Source → input ${k.docno} (${k.jenis}) → Search`, async () => {
           const res = await cariDocno(user, k.docno);
@@ -152,7 +147,8 @@ for (const j of JENIS) {
         });
         await langkah(user, 'Tutup Copy Source: form tetap kosong', async () => {
           await tutupModal(app);
-          expect(await isianForm(app), 'form terisi padahal docno ditolak').toEqual(sebelum);
+          const sesudah = await isianStabil(app);
+          expect(isianBaru(sebelum, sesudah), `form terisi padahal docno ditolak. Isian baru: ${isianBaru(sebelum, sesudah).join(' | ')}`).toEqual([]);
         });
         await hasil(user, 'reference document tidak tampil (ditolak)');
       });

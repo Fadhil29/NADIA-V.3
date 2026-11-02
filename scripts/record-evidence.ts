@@ -41,7 +41,13 @@ async function main() {
   const video = page.video();
   await context.close();
   await browser.close();
-  const file = simpanVideo(await video!.path(), sheet, id, role, status);
+  // judul skenario dari uat/cases.json (hasil uat:prepare), kalau ada
+  let judul = '';
+  try {
+    const cases: { sheet: string; id: string; scenario: string }[] = JSON.parse(fs.readFileSync('uat/cases.json', 'utf8'));
+    judul = cases.find((c) => c.sheet === sheet && c.id === id)?.scenario ?? '';
+  } catch {}
+  const file = simpanVideo(await video!.path(), sheet, id, role, status, judul);
   fs.rmSync(tmp, { recursive: true, force: true });
 
   // case lintas role direkam per role: rekaman di hari yang sama digabung ke entri yang sama

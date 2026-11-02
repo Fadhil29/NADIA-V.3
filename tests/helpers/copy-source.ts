@@ -1,5 +1,5 @@
-import { expect, FrameLocator, Page } from '@playwright/test';
-import { menuItem, menuLink, nadia, waitForNadia } from './nav';
+import { expect, FrameLocator, Locator, Page } from '@playwright/test';
+import { menuItem, menuLink, nadia, reloadNadia, waitForNadia } from './nav';
 
 // selector Copy Source (codegen 30/10, sama dengan bab04-copy-source.spec.ts)
 export const T = { timeout: 20000 };
@@ -13,9 +13,14 @@ export const tombolSearch = (app: FrameLocator) => modal(app).getByRole('button'
 export const tombolSelect = (app: FrameLocator) => app.getByRole('button', { name: /Select\s*$/ });
 export const swal = (app: FrameLocator) => app.locator('.swal2-popup');
 
-export async function lewatiTour(app: FrameLocator) {
+// guidance wizard NADIA: ditutup dengan Esc (konfirmasi user 02/11), tombol "Lewati" sebagai cadangan.
+// Esc hanya ditekan kalau wizard terlihat, supaya tidak ikut menutup modal lain (mis. Copy Source)
+export async function lewatiTour(app: FrameLocator, tunggu = 3000) {
   const lewati = app.getByRole('button', { name: 'Lewati' });
-  if (await lewati.waitFor({ timeout: 3000 }).then(() => true, () => false)) await lewati.click();
+  const wizard = lewati.or(app.locator('.driver-popover, .introjs-tooltip, .shepherd-element')).first();
+  if (!(await wizard.waitFor({ timeout: tunggu }).then(() => true, () => false))) return;
+  await app.locator('body').press('Escape').catch(() => {}); // press di dalam iframe, bukan halaman induk
+  if (await wizard.waitFor({ state: 'hidden', timeout: 2000 }).then(() => false, () => true)) await lewati.click().catch(() => {});
 }
 
 // segmen terakhir href baris = base64 dari docno
@@ -35,9 +40,18 @@ export type ItemSent = { docno: string; jenis: string };
 // padahal untuk UAT menu yang hilang/berubah harus jadi FAIL (RCA run 02/11 13:45)
 export async function bukaSentItem(user: Page) {
   await waitForNadia(user);
+  await lewatiTour(nadia(user)); // popup tour bisa menutupi sidebar (CS-24 02/11)
   const link = menuLink(user, 'Sent Item');
   await expect(link, 'menu "Sent Item" tidak ditemukan di sidebar (nama atau struktur menu berubah?)').toBeVisible(T);
-  await link.click();
+  await klikUlang(user, link);
+}
+
+// klik dengan percobaan ulang: klik bisa terhalang popup/animasi sesaat
+export async function klikUlang(user: Page, target: Locator) {
+  await expect(async () => {
+    await lewatiTour(nadia(user), 500);
+    await target.click({ timeout: 5000 });
+  }).toPass(T);
 }
 
 export async function daftarSentItem(user: Page, maks = 25): Promise<ItemSent[]> {
@@ -64,12 +78,13 @@ export async function daftarSentItem(user: Page, maks = 25): Promise<ItemSent[]>
 export async function bukaForm(user: Page, submenu: string) {
   const app = nadia(user);
   await waitForNadia(user);
+  await lewatiTour(app); // popup tour bisa menutupi sidebar (CS-19 02/11)
   const sub = menuLink(user, submenu);
   for (let i = 0; i < 3 && !(await sub.isVisible().catch(() => false)); i++) {
-    await menuItem(user, 'Compose').click();
+    await klikUlang(user, menuItem(user, 'Compose'));
     await sub.waitFor({ timeout: 5000 }).catch(() => {});
   }
-  await sub.click();
+  await klikUlang(user, sub);
   await lewatiTour(app);
   await expect(tombolCopySource(app), `form ${submenu} belum terbuka`).toBeVisible(T);
 }
@@ -117,4 +132,43 @@ export async function isianForm(app: FrameLocator) {
     });
     return isi;
   });
+}
+
+// form baru selesai terisi nilai default (tanggal, pengirim, dll.) beberapa saat setelah dibuka.
+// Ambil snapshot setelah isinya tidak berubah 1,5 dtk, supaya pembanding "sebelum" tidak kurang (CS-03 02/11)
+export async function isianStabil(app: FrameLocator, maksMs = 10000) {
+  let lama = JSON.stringify(await isianForm(app));
+  let sejak = Date.now();
+  const akhir = Date.now() + maksMs;
+  while (Date.now() < akhir) {
+    await new Promise((r) => setTimeout(r, 500));
+    const kini = JSON.stringify(await isianForm(app));
+    if (kini !== lama) {
+      lama = kini;
+      sejak = Date.now();
+    } else if (Date.now() - sejak >= 1500) break;
+  }
+  return JSON.parse(lama) as string[];
+}
+
+// isian yang muncul setelah aksi, untuk pesan error yang bisa dibaca
+export const isianBaru = (sebelum: string[], sesudah: string[]) => sesudah.filter((v) => !sebelum.includes(v));
+
+// cari docno lewat search bar Sent Item: tunggu 1,5 dtk; kalau belum muncul, refresh lalu ketik ulang
+export async function cariDiSentItem(user: Page, docno: string, percobaan = 3) {
+  const app = nadia(user);
+  for (let i = 1; i <= percobaan; i++) {
+    if (i > 1) {
+      await reloadNadia(user);
+      await waitForNadia(user);
+    }
+    await bukaSentItem(user);
+    await lewatiTour(app);
+    const cari = app.locator('.dataTables_filter input, .dt-search input').first();
+    await expect(cari, 'search bar Sent Item tidak ditemukan').toBeVisible(T);
+    await cari.fill(docno);
+    const baris = app.locator('table tbody tr').filter({ hasText: docno }).first();
+    if (await baris.waitFor({ timeout: 1500 }).then(() => true, () => false)) return;
+  }
+  throw new Error(`${docno} tidak ditemukan di Sent Item setelah ${percobaan}x cari (refresh di antaranya)`);
 }
