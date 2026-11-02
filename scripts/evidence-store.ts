@@ -46,3 +46,10 @@ export function simpanVideo(src: string, sheet: string, id: string, role: string
 }
 
 export const hariIni = () => new Date().toISOString().slice(0, 10);
+
+// hapus video lama satu case (mis. *_FAIL dari run sebelumnya) supaya folder hanya berisi hasil terakhir
+export function hapusVideoLama(sheet: string, id: string) {
+  const dir = path.join(EVIDENCE_DIR, aman(sheet));
+  if (!fs.existsSync(dir)) return;
+  for (const f of fs.readdirSync(dir)) if (f.startsWith(`${aman(id)}_`) && f.endsWith('.webm')) fs.rmSync(path.join(dir, f));
+}

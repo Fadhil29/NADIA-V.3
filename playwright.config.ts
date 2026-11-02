@@ -11,6 +11,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: process.env.EVIDENCE ? 'on' : 'off', // untuk test yang memakai fixture page bawaan
+    launchOptions: { slowMo: process.env.EVIDENCE ? 400 : 0 }, // video evidence lebih mudah diikuti
     actionTimeout: 15000,
   },
   projects: [

@@ -1,5 +1,5 @@
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
-import { bacaManifest, Entry, hariIni, keyOf, simpanManifest, simpanVideo } from '../scripts/evidence-store';
+import { bacaManifest, Entry, hapusVideoLama, hariIni, keyOf, simpanManifest, simpanVideo } from '../scripts/evidence-store';
 import { parseUat } from '../tests/helpers/uat';
 
 // aktif hanya saat EVIDENCE=1. Video test yang punya anotasi uat() disalin ke evidence/<sheet>/
@@ -21,6 +21,7 @@ export default class EvidenceReporter implements Reporter {
     for (const { sheet, ids } of maps) {
       for (const id of ids) {
         const key = keyOf(sheet, id);
+        if (!this.run[key]) hapusVideoLama(sheet, id); // pertama kali case ini muncul di run ini
         const e = (this.run[key] ??= { sheet, id, status, tanggal: hariIni(), roles: [], files: [], sumber: 'otomatis' });
         if (status === 'FAIL') {
           e.status = 'FAIL';
