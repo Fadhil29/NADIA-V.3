@@ -6,8 +6,18 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "noEmit": true
   },
-  "include": ["scripts", "tests", "reporters", "playwright.config.ts"]
+  "include": [
+    "config",
+    "pages",
+    "utils",
+    "tests",
+    "scripts",
+    "reporters",
+    "playwright.config.ts"
+  ]
 }

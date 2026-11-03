@@ -2,7 +2,7 @@ import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/tes
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
-import { ROLES } from '../scripts/roles';
+import { ROLES } from '../config/roles';
 
 type Row = { role: string; file: string; scenario: string; status: string; durationS: number; error: string };
 
@@ -21,7 +21,7 @@ export default class ExcelReporter implements Reporter {
       scenario: test.title,
       status: result.status,
       durationS: Math.round(result.duration / 100) / 10,
-      error: failedStep ? `[${failedStep}] ${msg}` : msg,
+      error: result.status === 'passed' ? '' : failedStep ? `[${failedStep}] ${msg}` : msg,
     });
   }
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { NADIA_HOME } from '../../scripts/roles';
-import { nadia, openMenu } from '../helpers/nav';
+import { NADIA_HOME } from '../../config/roles';
+import { nadia, openMenu } from '../../pages/nadia-shell';
 
 // jalan di semua project role; hanya admin yang boleh melihat menu User Admin
 test('Filtering Menu User Admin: filter menampilkan user sesuai kriteria', async ({ page }, info) => {

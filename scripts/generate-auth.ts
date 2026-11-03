@@ -1,7 +1,7 @@
 import { chromium, Page } from '@playwright/test';
 import 'dotenv/config';
 import fs from 'fs';
-import { ROLES, account, authFile, isOnLoginPage, FAMILIA_HOME, NADIA_HOME, SSO_LOGIN_URL } from './roles';
+import { ROLES, account, authFile, isOnLoginPage, FAMILIA_HOME, NADIA_HOME, SSO_LOGIN_URL } from '../config/roles';
 
 const only = process.argv[2]; // npm run auth -- staff
 const targets = only ? ROLES.filter((r) => r.slug === only) : ROLES;

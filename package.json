@@ -4,14 +4,16 @@
   "private": true,
   "scripts": {
     "auth": "tsx scripts/generate-auth.ts",
-    "test": "playwright test",
-    "test:access": "playwright test access",
-    "test:workflow": "playwright test --project=workflow",
-    "report": "playwright show-report",
+    "uat": "playwright test --project=uat",
+    "regression": "playwright test --project=regression",
+    "access": "playwright test tests/access",
     "test:evidence": "tsx scripts/run-evidence.ts",
     "evidence": "tsx scripts/record-evidence.ts",
     "uat:prepare": "tsx scripts/uat-prepare.ts",
-    "uat:fill": "tsx scripts/uat-fill.ts"
+    "uat:fill": "tsx scripts/uat-fill.ts",
+    "report": "playwright show-report",
+    "dump:menu": "tsx scripts/dump-menu.ts",
+    "dump:page": "tsx scripts/dump-page.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

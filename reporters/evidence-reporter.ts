@@ -1,6 +1,6 @@
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 import { bacaManifest, Entry, hapusVideoLama, hariIni, keyOf, simpanManifest, simpanVideo } from '../scripts/evidence-store';
-import { parseUat } from '../tests/helpers/uat';
+import { parseUat } from '../config/uat';
 
 // aktif hanya saat EVIDENCE=1. Video test yang punya anotasi uat() disalin ke evidence/<sheet>/
 // dan dicatat di evidence/manifest.json. Satu case bisa dipetakan ke beberapa test (mis. per role):

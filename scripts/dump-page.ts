@@ -2,7 +2,7 @@ import { chromium, Frame } from '@playwright/test';
 import 'dotenv/config';
 import fs from 'fs';
 import readline from 'readline';
-import { authFile, NADIA_HOME } from './roles';
+import { authFile, NADIA_HOME } from '../config/roles';
 
 // Pakai : npx tsx scripts/dump-page.ts <role> <nama-dump> [--html]
 // Contoh: npx tsx scripts/dump-page.ts admin bab02

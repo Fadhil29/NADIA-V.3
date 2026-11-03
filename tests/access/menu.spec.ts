@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { account, NADIA_HOME } from '../../scripts/roles';
-import { menuItem, nadia, waitForNadia } from '../helpers/nav';
+import { account, NADIA_HOME } from '../../config/roles';
+import { menuItem, nadia, waitForNadia } from '../../pages/nadia-shell';
 
 // TODO: isi dari matriks akses yang dikonfirmasi PM
 const VISIBLE: Record<string, string[]> = {

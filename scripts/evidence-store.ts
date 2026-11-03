@@ -34,15 +34,15 @@ export function simpanManifest(data: Record<string, Entry>) {
 
 const aman = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '-').trim();
 
-// judul skenario untuk nama file: buang CASE ID di depan, karakter non huruf/angka jadi "-", maks 60 karakter
+// judul skenario untuk nama file: buang CASE ID di depan, karakter non huruf/angka jadi "-", maks 75 karakter
 export const slugSkenario = (judul = '', id = '') =>
   judul
     .replace(new RegExp(`^\\s*${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`), '')
     .normalize('NFKD')
     .replace(/[^A-Za-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .replace(/^(.{0,60})(-.*)?$/, '$1') // potong di batas kata terakhir sebelum 60 karakter
-    .slice(0, 60);
+    .replace(/^(.{0,75})(-.*)?$/, '$1') // potong di batas kata terakhir sebelum 75 karakter
+    .slice(0, 75);
 
 // salin video ke evidence/<sheet>/<ID>_<skenario>_<role>_<STATUS>[_n].webm, kembalikan path relatif
 export function simpanVideo(src: string, sheet: string, id: string, role: string, status: Status, judul = '') {

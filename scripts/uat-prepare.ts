@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import fs from 'fs';
-import { UAT_PREFIX } from '../tests/helpers/uat';
+import { UAT_PREFIX } from '../config/uat';
 import { cariTabel, KOLOM_TAMBAHAN, teks } from './uat-shared';
 
 // npm run uat:prepare -- "path/UAT_pengembangan_fitur_V_2.xlsx"

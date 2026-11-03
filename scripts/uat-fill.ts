@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
-import { UAT_PREFIX } from '../tests/helpers/uat';
+import { UAT_PREFIX } from '../config/uat';
 import { bacaManifest, EVIDENCE_DIR } from './evidence-store';
 import { cariTabel, teks } from './uat-shared';
 

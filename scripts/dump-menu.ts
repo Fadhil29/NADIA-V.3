@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import 'dotenv/config';
 import fs from 'fs';
-import { authFile, NADIA_HOME } from './roles';
+import { authFile, NADIA_HOME } from '../config/roles';
 
 // Dump struktur aksesibilitas isi iframe NADIA supaya kelihatan role dan nama asli tiap menu.
 // Pakai : npx tsx scripts/dump-menu.ts staff

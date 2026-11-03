@@ -2,9 +2,9 @@ import { chromium } from '@playwright/test';
 import 'dotenv/config';
 import fs from 'fs';
 import { createInterface } from 'readline/promises';
-import { authFile, NADIA_HOME, SSO_LOGIN_URL } from './roles';
+import { authFile, NADIA_HOME, SSO_LOGIN_URL } from '../config/roles';
 import { bacaManifest, hariIni, keyOf, simpanManifest, simpanVideo, Status } from './evidence-store';
-import { UAT_PREFIX } from '../tests/helpers/uat';
+import { UAT_PREFIX } from '../config/uat';
 
 // rekam evidence case UAT yang dijalankan manual
 // npm run evidence -- "Copy Source" CS-05 divhead
