@@ -93,6 +93,11 @@ export class DashboardPage {
     await expect(this.select2(id).locator('.select2-selection__choice').filter({ hasText: chip }), `chip ${kode} terpilih`).toHaveCount(1);
   }
 
+  // daftar lokasi yang boleh dipilih akun ini (dari <option> select Branch)
+  async opsiBranch(): Promise<string[]> {
+    return (await this.app.locator('#branch option').allTextContents()).map((t) => t.trim()).filter(Boolean);
+  }
+
   async terpilih(id: string): Promise<string[]> {
     return this.select2(id).locator('.select2-selection__choice').evaluateAll((els) => els.map((e) => (e.getAttribute('title') ?? e.textContent ?? '').replace(/^×/, '').trim()));
   }

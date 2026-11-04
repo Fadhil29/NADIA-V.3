@@ -19,7 +19,7 @@ const label = (app: FrameLocator, on: boolean) => app.getByText(on ? 'ON' : 'OFF
 const lanjutkan = (app: FrameLocator) => app.getByRole('button', { name: /^\s*Ya\b/i }).filter({ visible: true }).first();
 // tombol penutup popup info/error/sukses
 const tombolTutup = (app: FrameLocator) => app.getByRole('button', { name: /^\s*(OK|Mengerti|Got It)\s*$/i }).filter({ visible: true }).first();
-const TANPA_ROLE = ['admin']; // akun tanpa dropdown role
+const TANPA_ROLE = ['admin', 'admin-regional', 'admin-cabang']; // akun tanpa dropdown role
 
 // validasi spam: jeda minimal 3 detik antar aksi (konfirmasi dev 29/10), beri margin
 const COOLDOWN_MS = 4000;

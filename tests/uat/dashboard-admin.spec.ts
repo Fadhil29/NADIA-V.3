@@ -156,16 +156,80 @@ test.describe('Dashboard Admin Pusat - Filter Document Type', () => {
   });
 });
 
-// Akun admin regional/cabang belum ada di .env (ACTORS_WITHOUT_ACCOUNT di config/roles.ts)
+// Admin regional & cabang: tiap case dijalankan untuk kedua akun (NADIA_ADMINREG_*, NADIA_ADMINCABANG_* di .env)
+const ADMIN_WILAYAH = ['admin-regional', 'admin-cabang'] as const;
+
 test.describe('Dashboard Admin Regional/Cabang', () => {
-  for (const [id, skenario] of [
-    ['DASH-07', 'Show location: hanya lokasi sesuai akun admin regional/cabang'],
-    ['DASH-08', 'Kosongkan filter document type'],
-    ['DASH-09', 'Add single document type'],
-    ['DASH-10', 'Add multiple document type'],
-  ]) {
-    test(`${id} ${skenario}`, { ...TAG, annotation: uat(SHEET, id) }, async () => {
-      test.fixme(true, 'butuh akun admin regional/cabang (NADIA_ADMINREGIONAL_* di .env)');
-    });
-  }
+  test('DASH-07 Show location: hanya lokasi sesuai akun', { ...TAG, annotation: uat(SHEET, 'DASH-07') }, async ({ as }) => {
+    const pusat = await mulai(await as('admin'), 'DASH-07', 'Show location: hanya lokasi sesuai akun admin regional/cabang');
+    const semua = await langkah(await as('admin'), 'Admin Pusat: catat semua lokasi di filter Branch', () => pusat.opsiBranch());
+
+    for (const role of ADMIN_WILAYAH) {
+      const user = await as(role);
+      const dash = await mulai(user, 'DASH-07', `Show location (${role})`);
+      const opsi = await langkah(user, 'Catat lokasi yang tampil di filter Branch', () => dash.opsiBranch());
+
+      expect(opsi.length, `${role}: filter Branch tidak boleh kosong`).toBeGreaterThan(0);
+      expect(opsi.length, `${role}: lokasi harus lebih sedikit dari admin pusat`).toBeLessThan(semua.length);
+      expect(opsi.filter((o) => !semua.includes(o)), `${role}: lokasi di luar daftar sistem`).toEqual([]);
+      await hasil(user, `${role}: ${opsi.length} lokasi (admin pusat: ${semua.length})`);
+    }
+  });
+
+  test('DASH-08 Kosongkan filter document type', { ...TAG, annotation: uat(SHEET, 'DASH-08') }, async ({ as }) => {
+    for (const role of ADMIN_WILAYAH) {
+      const user = await as(role);
+      const dash = await mulai(user, 'DASH-08', `Kosongkan filter document type (${role})`);
+      const satu = await langkah(user, 'Filter Document Type ND dulu', async () => {
+        await dash.kosongkan('naskahFilter');
+        await dash.pilih('naskahFilter', 'ND');
+        return dash.filterJenis();
+      });
+      await langkah(user, 'Kosongkan filter Document Type', () => dash.kosongkan('naskahFilter'));
+      const r = await langkah(user, 'Klik Filter Document Type', () => dash.filterJenis());
+
+      expect(r.jenis, `${role}: filter kosong tidak boleh mengirim jenis[]`).toEqual([]);
+      expect(r.data.length, `${role}: chart harus kembali menampilkan semua tipe`).toBeGreaterThan(satu.data.length);
+      await hasil(user, `${role}: tipe dokumen ${satu.data.length} → ${r.data.length}`);
+    }
+  });
+
+  test('DASH-09 Add single document type', { ...TAG, annotation: uat(SHEET, 'DASH-09') }, async ({ as }) => {
+    for (const role of ADMIN_WILAYAH) {
+      const user = await as(role);
+      const dash = await mulai(user, 'DASH-09', `Add single document type (${role})`);
+      const semua = await semuaJenis(user, dash);
+      const nd = semua.data.find((d) => d.codeAP2 === 'ND');
+      expect(nd, `${role}: baseline harus punya Nota Dinas`).toBeTruthy();
+      await langkah(user, 'Pilih Document Type ND - Nota Dinas', () => dash.pilih('naskahFilter', 'ND'));
+      const r = await langkah(user, 'Klik Filter Document Type', () => dash.filterJenis());
+
+      expect(r.data.map((d) => d.codeAP2), `${role}: chart hanya Nota Dinas`).toEqual(['ND']);
+      expect(r.data[0].total, `${role}: jumlah ND harus sama dengan baseline`).toBe(nd!.total);
+      expect(r.data.length, `${role}: jumlah tipe di chart harus berkurang`).toBeLessThan(semua.data.length);
+      await hasil(user, `${role}: tipe dokumen ${semua.data.length} → 1 (ND: ${r.data[0].total})`);
+    }
+  });
+
+  test('DASH-10 Add multiple document type', { ...TAG, annotation: uat(SHEET, 'DASH-10') }, async ({ as }) => {
+    const kode = ['ND', 'BAC', 'NKA'];
+    for (const role of ADMIN_WILAYAH) {
+      const user = await as(role);
+      const dash = await mulai(user, 'DASH-10', `Add multiple document type (${role})`);
+      const semua = await semuaJenis(user, dash);
+      await langkah(user, `Pilih Document Type ${kode.join(', ')}`, async () => {
+        for (const k of kode) await dash.pilih('naskahFilter', k);
+      });
+      const r = await langkah(user, 'Klik Filter Document Type', () => dash.filterJenis());
+
+      const tampil = r.data.map((d) => d.codeAP2);
+      expect(tampil.length, `${role}: minimal satu tipe tampil`).toBeGreaterThan(0);
+      expect(tampil.filter((c) => !kode.includes(c)), `${role}: tipe di luar filter`).toEqual([]);
+      for (const d of r.data) {
+        expect(d.total, `${role}: jumlah ${d.codeAP2} harus sama dengan baseline`).toBe(semua.data.find((x) => x.codeAP2 === d.codeAP2)?.total);
+      }
+      expect(r.data.length, `${role}: jumlah tipe di chart harus berkurang`).toBeLessThan(semua.data.length);
+      await hasil(user, `${role}: tipe dokumen ${semua.data.length} → ${r.data.length}`);
+    }
+  });
 });

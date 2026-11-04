@@ -11,6 +11,8 @@ export const ROLES = [
   { slug: 'admin', name: 'Admin', env: 'NADIA_ADMIN' },
   { slug: 'pgs', name: 'PGS', env: 'NADIA_PGS' },
   { slug: 'staff-dispo', name: 'Staff Dispo', env: 'NADIA_STAFFDISPO' },
+  { slug: 'admin-regional', name: 'Admin Regional', env: 'NADIA_ADMINREG' },
+  { slug: 'admin-cabang', name: 'Admin Cabang', env: 'NADIA_ADMINCABANG' },
 ] as const;
 
 // penerima surat, tidak login
@@ -26,14 +28,7 @@ export const ACTOR_ALIASES = {
 } as const satisfies Record<string, RoleSlug>;
 
 // aktor yang dipakai spec tapi belum punya akun; spec-nya tetap test.fixme sampai akun ada
-export const ACTORS_WITHOUT_ACCOUNT = [
-  'sekretaris',
-  'admin-regional',
-  'admin-cabang',
-  'staff-dispo',
-  'pejabat',
-  'pgs',
-] as const;
+export const ACTORS_WITHOUT_ACCOUNT = ['sekretaris', 'pejabat'] as const;
 
 export type ActorName = RoleSlug | keyof typeof ACTOR_ALIASES | (typeof ACTORS_WITHOUT_ACCOUNT)[number];
 
