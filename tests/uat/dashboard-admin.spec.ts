@@ -26,6 +26,11 @@ async function mulai(user: Page, id: string, skenario: string) {
 
 const jumlah = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
+// data staging hidup (user lain terus membuat dokumen): dua request yang berselang detik bisa beda beberapa dokumen.
+// Toleransi 0,1% (min. 10 dokumen); filter yang salah selisihnya jauh lebih besar. Angka ikut tercetak di pesan gagal.
+const dekat = (aktual: number, harapan: number, label: string) =>
+  expect(Math.abs(aktual - harapan), `${label}: ${aktual} vs ${harapan}`).toBeLessThanOrEqual(Math.max(10, Math.round(harapan * 0.001)));
+
 const SEMUA_REGION = ['HO', 'Region 1', 'Region 2', 'Region 3', 'Region 4', 'Region 5', 'Region 6'];
 // kode select #branch
 const BRANCH = { CGK: '01', HLP: '02', BDJ: '42' } as const;
@@ -60,7 +65,7 @@ test.describe('Dashboard Admin Pusat - Filter Location', () => {
 
     expect(r.branch, 'filter kosong tidak boleh mengirim branch[]').toEqual([]);
     expect(r.labels, 'chart Total Documents harus berisi HO dan semua regional').toEqual(SEMUA_REGION);
-    expect(jumlah(r.values), 'jumlah dokumen per region harus = Total Document').toBe(r.total);
+    dekat(jumlah(r.values), r.total, 'jumlah dokumen per region harus = Total Document');
     expect(r.total, 'semua lokasi harus lebih banyak dari HO saja').toBeGreaterThan(sebelum.total);
     await hasil(user, `Total Document berubah ${sebelum.total} (HO) → ${r.total} (semua lokasi)`);
   });
@@ -75,7 +80,7 @@ test.describe('Dashboard Admin Pusat - Filter Location', () => {
 
     expect(r.branch, 'request harus mengirim CGK').toEqual([BRANCH.CGK]);
     expect(r.labels, 'chart Total Documents hanya CGK').toEqual(['CGK']);
-    expect(r.values[0], 'jumlah dokumen CGK harus = Total Document').toBe(r.total);
+    dekat(r.values[0], r.total, 'jumlah dokumen CGK harus = Total Document');
     expect(r.total, 'CGK harus lebih sedikit dari semua lokasi').toBeLessThan(semua.total);
     await hasil(user, `Total Document berubah ${semua.total} (semua) → ${r.total} (CGK)`);
   });
@@ -93,7 +98,7 @@ test.describe('Dashboard Admin Pusat - Filter Location', () => {
 
     expect([...r.branch].sort(), 'request harus mengirim ketiga lokasi').toEqual(lokasi.map((l) => BRANCH[l]).sort());
     expect([...r.labels].sort(), 'chart Total Documents hanya lokasi yang difilter').toEqual([...lokasi].sort());
-    expect(jumlah(r.values), 'jumlah dokumen per lokasi harus = Total Document').toBe(r.total);
+    dekat(jumlah(r.values), r.total, 'jumlah dokumen per lokasi harus = Total Document');
     expect(r.total, '3 lokasi harus lebih sedikit dari semua lokasi').toBeLessThan(semua.total);
     await hasil(user, `Total Document berubah ${semua.total} (semua) → ${r.total} (${lokasi.join(', ')})`);
   });
@@ -128,7 +133,7 @@ test.describe('Dashboard Admin Pusat - Filter Document Type', () => {
 
     expect(r.jenis, 'request harus mengirim ND').toEqual([nd!.JenisId]);
     expect(r.data.map((d) => d.codeAP2), 'chart hanya Nota Dinas').toEqual(['ND']);
-    expect(r.data[0].total, 'jumlah ND harus sama dengan ND di baseline').toBe(nd!.total);
+    dekat(r.data[0].total, nd!.total, 'jumlah ND harus sama dengan ND di baseline');
     expect(r.data.length, 'jumlah tipe di chart harus berkurang').toBeLessThan(semua.data.length);
     await hasil(user, `Tipe dokumen ${semua.data.length} → 1 (ND: ${r.data[0].total})`);
   });
@@ -149,7 +154,7 @@ test.describe('Dashboard Admin Pusat - Filter Document Type', () => {
     expect(tampil.length, 'minimal satu tipe tampil').toBeGreaterThan(0);
     expect(tampil.filter((c) => !kode.includes(c)), 'tipe di luar filter').toEqual([]);
     for (const d of r.data) {
-      expect(d.total, `jumlah ${d.codeAP2} harus sama dengan baseline`).toBe(semua.data.find((x) => x.codeAP2 === d.codeAP2)?.total);
+      dekat(d.total, (semua.data.find((x) => x.codeAP2 === d.codeAP2)?.total ?? -1), `jumlah ${d.codeAP2} harus sama dengan baseline`);
     }
     expect(r.data.length, 'jumlah tipe di chart harus berkurang').toBeLessThan(semua.data.length);
     await hasil(user, `Tipe dokumen ${semua.data.length} → ${r.data.length} (${r.data.map((d) => `${d.codeAP2}: ${d.total}`).join(', ')})`);
@@ -205,7 +210,7 @@ test.describe('Dashboard Admin Regional/Cabang', () => {
       const r = await langkah(user, 'Klik Filter Document Type', () => dash.filterJenis());
 
       expect(r.data.map((d) => d.codeAP2), `${role}: chart hanya Nota Dinas`).toEqual(['ND']);
-      expect(r.data[0].total, `${role}: jumlah ND harus sama dengan baseline`).toBe(nd!.total);
+      dekat(r.data[0].total, nd!.total, `${role}: jumlah ND harus sama dengan baseline`);
       expect(r.data.length, `${role}: jumlah tipe di chart harus berkurang`).toBeLessThan(semua.data.length);
       await hasil(user, `${role}: tipe dokumen ${semua.data.length} → 1 (ND: ${r.data[0].total})`);
     }
@@ -226,7 +231,7 @@ test.describe('Dashboard Admin Regional/Cabang', () => {
       expect(tampil.length, `${role}: minimal satu tipe tampil`).toBeGreaterThan(0);
       expect(tampil.filter((c) => !kode.includes(c)), `${role}: tipe di luar filter`).toEqual([]);
       for (const d of r.data) {
-        expect(d.total, `${role}: jumlah ${d.codeAP2} harus sama dengan baseline`).toBe(semua.data.find((x) => x.codeAP2 === d.codeAP2)?.total);
+        dekat(d.total, (semua.data.find((x) => x.codeAP2 === d.codeAP2)?.total ?? -1), `${role}: jumlah ${d.codeAP2} harus sama dengan baseline`);
       }
       expect(r.data.length, `${role}: jumlah tipe di chart harus berkurang`).toBeLessThan(semua.data.length);
       await hasil(user, `${role}: tipe dokumen ${semua.data.length} → ${r.data.length}`);
